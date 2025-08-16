@@ -33,8 +33,12 @@
                     <span id="mining-progress" class="value">0%</span>
                 </div>
                 <div class="status-item">
-                    <span class="label">Shares Found:</span>
-                    <span id="shares-found" class="value">0</span>
+                    <span class="label">Hashes Saved:</span>
+                    <span id="hashes-saved" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Session:</span>
+                    <span id="session-id" class="value">Loading...</span>
                 </div>
             </div>
             <div class="progress-bar">
@@ -44,13 +48,12 @@
 
         <div class="ai-interface">
             <div class="input-section">
-                <label for="command-input">Ask the AI:</label>
+                <label for="command-input">Ask the AI (Press Enter to submit):</label>
                 <textarea 
                     id="command-input" 
-                    placeholder="Enter your question or command here..."
+                    placeholder="Enter your question or command here... (Press Enter to submit)"
                     rows="3"
                 ></textarea>
-                <button id="submit-btn" onclick="submitQuery()">Submit Query</button>
             </div>
 
             <div class="response-section">
@@ -74,8 +77,7 @@
                     <div class="wallet-info">
                         <div class="wallet-address">
                             <strong>Wallet:</strong> 
-                            <span class="address">0x6f602be9fccf656c8c3e9f36d2064d580264b393</span>
-                            <button onclick="copyWallet()" class="copy-btn">Copy</button>
+                            <span class="address" onclick="copyWallet()" title="Click to copy">0x6f602be9fccf656c8c3e9f36d2064d580264b393</span>
                         </div>
                         <div class="networks">
                             <span class="network">Ethereum</span>

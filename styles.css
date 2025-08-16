@@ -59,8 +59,8 @@ header h1 {
 
 .status-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
     margin-bottom: 20px;
 }
 
@@ -140,28 +140,13 @@ header h1 {
     box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
 }
 
-#submit-btn {
-    background: linear-gradient(45deg, #00d4ff, #00ff88);
-    color: #0f0f23;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
+#command-input {
     transition: all 0.3s ease;
 }
 
-#submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
-}
-
-#submit-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+#command-input:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 212, 255, 0.2);
 }
 
 .response-section h3 {
@@ -265,19 +250,14 @@ footer {
     word-break: break-all;
 }
 
-.copy-btn {
-    background: rgba(0, 212, 255, 0.2);
-    color: #00d4ff;
-    border: 1px solid #00d4ff;
-    padding: 5px 10px;
-    border-radius: 4px;
+.address {
     cursor: pointer;
-    font-size: 0.8rem;
     transition: all 0.3s ease;
 }
 
-.copy-btn:hover {
-    background: rgba(0, 212, 255, 0.3);
+.address:hover {
+    background: rgba(0, 212, 255, 0.3) !important;
+    transform: scale(1.02);
 }
 
 .networks {

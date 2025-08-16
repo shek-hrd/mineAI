@@ -3,15 +3,19 @@ class AIMiningSim {
         this.isMining = false;
         this.hashRate = 0;
         this.progress = 0;
-        this.sharesFound = 0;
+        this.hashesSaved = 0;
+        this.sessionId = this.generateSessionId();
         this.maxHashRate = this.getMaxHashRate();
         this.miningInterval = null;
         this.progressInterval = null;
         this.workerPool = [];
+        this.currentHashes = [];
+        this.fileCounter = this.getNextFileNumber();
         
         this.bindEvents();
         this.updateDisplay();
         this.detectHardware();
+        this.initializeSession();
     }
 
     // Detect user's hardware capabilities for appropriate mining simulation
@@ -37,11 +41,37 @@ class AIMiningSim {
         return Math.random() * 1500 + 300; // 300-1800 H/s range
     }
 
+    generateSessionId() {
+        return 'session_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    getNextFileNumber() {
+        const saved = localStorage.getItem('mineAI_fileCounter');
+        const current = saved ? parseInt(saved) + 1 : 1;
+        localStorage.setItem('mineAI_fileCounter', current.toString());
+        return current;
+    }
+
+    initializeSession() {
+        document.getElementById('session-id').textContent = this.sessionId.substr(-8);
+        console.log(`Session initialized: ${this.sessionId}`);
+    }
+
     bindEvents() {
-        // Allow Enter key to submit
-        document.getElementById('command-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
+        const input = document.getElementById('command-input');
+        
+        // Allow Enter key to submit (without Ctrl)
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 this.submitQuery();
+            }
+        });
+
+        // Prevent form submission on Enter
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
             }
         });
     }
@@ -98,6 +128,29 @@ class AIMiningSim {
         console.log('Mining stopped');
     }
 
+    async performRealMining() {
+        // Perform actual SHA-256 hash computation
+        const data = `${this.sessionId}_${Date.now()}_${Math.random().toString(36)}`;
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        // Check if hash meets difficulty target (starts with zeros)
+        const difficulty = 4; // Adjust difficulty as needed
+        if (hashHex.startsWith('0'.repeat(difficulty))) {
+            this.currentHashes.push({
+                hash: hashHex,
+                timestamp: Date.now(),
+                nonce: data,
+                difficulty: difficulty
+            });
+            this.hashesSaved++;
+            this.showHashFound();
+        }
+        
+        return hashHex;
+    }
+
     simulateMining() {
         // Simulate variable hash rate based on "CPU load"
         const targetHashRate = this.maxHashRate * (0.6 + Math.random() * 0.4);
@@ -105,11 +158,8 @@ class AIMiningSim {
         
         this.hashRate = Math.max(0, targetHashRate + variance);
         
-        // Simulate finding shares occasionally
-        if (Math.random() < 0.02) { // 2% chance per tick
-            this.sharesFound++;
-            this.showShareFound();
-        }
+        // Perform actual mining computation
+        this.performRealMining();
         
         this.updateDisplay();
     }
@@ -121,34 +171,79 @@ class AIMiningSim {
         const progressIncrement = (this.hashRate / this.maxHashRate) * 0.5;
         this.progress += progressIncrement;
         
-        if (this.progress > 100) {
+        // Save hashes when reaching 100%
+        if (this.progress >= 100) {
+            this.saveHashesToFile();
             this.progress = 0; // Reset for next round
         }
         
         this.updateProgressBar();
     }
 
+    async saveHashesToFile() {
+        if (this.currentHashes.length === 0) return;
+        
+        const hashData = {
+            sessionId: this.sessionId,
+            fileNumber: this.fileCounter,
+            timestamp: new Date().toISOString(),
+            totalHashes: this.currentHashes.length,
+            hashes: this.currentHashes
+        };
+        
+        const filename = `mining_hashes_${this.fileCounter.toString().padStart(6, '0')}.json`;
+        const jsonString = JSON.stringify(hashData, null, 2);
+        
+        try {
+            // Create and download file
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log(`Saved ${this.currentHashes.length} hashes to ${filename}`);
+            
+            // Reset for next batch
+            this.currentHashes = [];
+            this.fileCounter = this.getNextFileNumber();
+            
+        } catch (error) {
+            console.error('Error saving hash file:', error);
+        }
+    }
+
     updateDisplay() {
         document.getElementById('hash-rate').textContent = `${Math.round(this.hashRate)} H/s`;
         document.getElementById('mining-progress').textContent = `${Math.round(this.progress)}%`;
-        document.getElementById('shares-found').textContent = this.sharesFound;
+        document.getElementById('hashes-saved').textContent = this.hashesSaved;
     }
 
     updateProgressBar() {
         document.getElementById('progress-fill').style.width = `${this.progress}%`;
     }
 
-    showShareFound() {
-        // Visual feedback for found share
-        const statusElement = document.getElementById('shares-found');
+    showHashFound() {
+        // Visual feedback for found hash
+        const statusElement = document.getElementById('hashes-saved');
         statusElement.style.animation = 'none';
         statusElement.offsetHeight; // Trigger reflow
         statusElement.style.animation = 'pulse 0.5s ease';
+        
+        // Also flash the progress bar
+        const progressFill = document.getElementById('progress-fill');
+        progressFill.style.boxShadow = '0 0 10px #00ff88';
+        setTimeout(() => {
+            progressFill.style.boxShadow = 'none';
+        }, 500);
     }
 
     async submitQuery() {
         const input = document.getElementById('command-input');
-        const submitBtn = document.getElementById('submit-btn');
         const responseFrame = document.getElementById('response-frame');
         const thinkingIndicator = document.getElementById('thinking-indicator');
         
@@ -159,8 +254,8 @@ class AIMiningSim {
         }
         
         // Disable input during processing
-        submitBtn.disabled = true;
         input.disabled = true;
+        input.style.opacity = '0.6';
         
         // Show thinking indicator and start mining
         thinkingIndicator.style.display = 'flex';
@@ -182,8 +277,8 @@ class AIMiningSim {
             // Stop mining and re-enable interface
             this.stopMining();
             thinkingIndicator.style.display = 'none';
-            submitBtn.disabled = false;
             input.disabled = false;
+            input.style.opacity = '1';
             input.value = ''; // Clear input
         }
     }
@@ -195,13 +290,101 @@ class AIMiningSim {
         return baseTime / hashRateFactor + Math.random() * 2000; // Add some randomness
     }
 
-    async simulateAIResponse(query, processingTime) {
-        // Simulate AI processing with realistic delay
-        await new Promise(resolve => setTimeout(resolve, processingTime));
+    async callRealAI(query) {
+        // Try multiple AI services in order of preference
+        const aiServices = [
+            { name: 'OpenAI', func: this.callOpenAI },
+            { name: 'Anthropic', func: this.callAnthropic },
+            { name: 'Local', func: this.callLocalAI }
+        ];
         
-        // Generate contextual responses based on query content
-        const responses = this.generateContextualResponse(query);
-        return responses;
+        for (const service of aiServices) {
+            try {
+                const response = await service.func.call(this, query);
+                if (response) {
+                    return `[${service.name} AI Response]\n\n${response}`;
+                }
+            } catch (error) {
+                console.log(`${service.name} AI failed:`, error.message);
+                continue;
+            }
+        }
+        
+        // Fallback to local processing
+        return this.generateContextualResponse(query);
+    }
+
+    async callOpenAI(query) {
+        // Note: This requires an API key - implement if available
+        const apiKey = localStorage.getItem('openai_api_key');
+        if (!apiKey) throw new Error('OpenAI API key not found');
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [{ role: 'user', content: query }],
+                max_tokens: 500
+            })
+        });
+        
+        const data = await response.json();
+        return data.choices[0].message.content;
+    }
+    
+    async callAnthropic(query) {
+        // Note: This requires an API key - implement if available
+        const apiKey = localStorage.getItem('anthropic_api_key');
+        if (!apiKey) throw new Error('Anthropic API key not found');
+        
+        // Anthropic API implementation would go here
+        throw new Error('Anthropic API not implemented in demo');
+    }
+    
+    async callLocalAI(query) {
+        // Attempt to call a local AI service (like Ollama)
+        try {
+            const response = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'llama2',
+                    prompt: query,
+                    stream: false
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                return data.response;
+            }
+        } catch (error) {
+            throw new Error('Local AI service not available');
+        }
+    }
+
+    async simulateAIResponse(query, processingTime) {
+        // Continue mining during AI processing
+        const startTime = Date.now();
+        let aiResponse;
+        
+        try {
+            // Try real AI first
+            aiResponse = await this.callRealAI(query);
+        } catch (error) {
+            // Fallback to simulated response
+            await new Promise(resolve => setTimeout(resolve, processingTime));
+            aiResponse = this.generateContextualResponse(query);
+        }
+        
+        const actualProcessingTime = Date.now() - startTime;
+        console.log(`AI processing took ${actualProcessingTime}ms`);
+        
+        return aiResponse;
     }
 
     generateContextualResponse(query) {
@@ -256,14 +439,16 @@ This proof-of-concept shows how future AI systems might operate on a contribute-
 function copyWallet() {
     const walletAddress = '0x6f602be9fccf656c8c3e9f36d2064d580264b393';
     navigator.clipboard.writeText(walletAddress).then(() => {
-        const copyBtn = document.querySelector('.copy-btn');
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = 'Copied!';
-        copyBtn.style.background = 'rgba(0, 255, 136, 0.3)';
+        const addressElement = document.querySelector('.address');
+        const originalBg = addressElement.style.background;
+        const originalText = addressElement.textContent;
+        
+        addressElement.textContent = 'Copied to clipboard!';
+        addressElement.style.background = 'rgba(0, 255, 136, 0.4)';
         
         setTimeout(() => {
-            copyBtn.textContent = originalText;
-            copyBtn.style.background = 'rgba(0, 212, 255, 0.2)';
+            addressElement.textContent = originalText;
+            addressElement.style.background = originalBg;
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy wallet address:', err);
