@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mining Interface</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Mining Interface</h1>
+            <p class="description">
+                This AI interface uses your computational resources to mine cryptocurrency while processing your requests. 
+                The mining operates fairly - it only runs while the AI is thinking and responding to your queries. 
+                Your computational contribution helps power the AI responses, creating a balanced exchange of resources for intelligence.
+            </p>
+        </header>
+
+        <div class="mining-status">
+            <h3>Mining Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="label">Status:</span>
+                    <span id="mining-status" class="value inactive">Idle</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Hash Rate:</span>
+                    <span id="hash-rate" class="value">0 H/s</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Progress:</span>
+                    <span id="mining-progress" class="value">0%</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Shares Found:</span>
+                    <span id="shares-found" class="value">0</span>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="ai-interface">
+            <div class="input-section">
+                <label for="command-input">Ask the AI:</label>
+                <textarea 
+                    id="command-input" 
+                    placeholder="Enter your question or command here..."
+                    rows="3"
+                ></textarea>
+                <button id="submit-btn" onclick="submitQuery()">Submit Query</button>
+            </div>
+
+            <div class="response-section">
+                <h3>AI Response</h3>
+                <div id="response-frame" class="response-frame">
+                    <p class="placeholder">Your AI response will appear here...</p>
+                </div>
+                <div id="thinking-indicator" class="thinking-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>AI is thinking... Mining in progress...</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="credits">
+                <p>Created by <a href="mailto:shekhrd+code@gmail.com">shekhrd</a></p>
+                <div class="donation-section">
+                    <h4>Support Development</h4>
+                    <p>Donations accepted on these networks:</p>
+                    <div class="wallet-info">
+                        <div class="wallet-address">
+                            <strong>Wallet:</strong> 
+                            <span class="address">0x6f602be9fccf656c8c3e9f36d2064d580264b393</span>
+                            <button onclick="copyWallet()" class="copy-btn">Copy</button>
+                        </div>
+                        <div class="networks">
+                            <span class="network">Ethereum</span>
+                            <span class="network">Polygon</span>
+                            <span class="network">BSC</span>
+                            <span class="network">Arbitrum</span>
+                            <span class="network">Optimism</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
